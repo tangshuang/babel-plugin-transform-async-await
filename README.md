@@ -1,17 +1,45 @@
-babel-plugin-transform-async-to-promises
+babel-plugin-transform-async-await
 ========================================
+
+FORK: this library if forked from babel-plugin-transform-async-to-promises, and modify `_async/_await` functions to be my own logic.
 
 Babel plugin to transform `async` functions containing `await` expressions to the equivalent chain of `Promise` calls with use of minimal helper functions.
 
 [![Build Status](https://travis-ci.org/rpetrich/babel-plugin-transform-async-to-promises.svg?branch=master)](https://travis-ci.org/rpetrich/babel-plugin-transform-async-to-promises)
 
+### Install
+
+```
+npm i -D babel-plugin-transform-async-await
+```
+
+### Usage
+
+Add this babel plugin into your config file `.babelrc` or config settings.
+
+```
+{
+	"presets": [
+    ["env", { "exclude": ["transform-async-to-generator", "transform-regenerator"] }],
+		...
+  ],
+	...
+	"plugins": [
+		...
+		"transform-async-await"
+	]
+}
+```
+
+Notice `env` preset's options, you should put exclude option to disable preset-env default plugins.
+
 ### Input:
 
 ```javascript
 async function fetchAsObjectURL(url) {
-    const response = await fetch(url);
-    const blob = await response.blob();
-    return URL.createObjectURL(blob);
+	const response = await fetch(url);
+	const blob = await response.blob();
+	return URL.createObjectURL(blob);
 }
 ```
 
@@ -32,7 +60,8 @@ var fetchAsObjectURL = _async(function(url) {
 ```javascript
 var _URL$createObjectURL = function(blob) {
 	return URL.createObjectURL(blob);
-}, _response$blob = function(response) {
+};
+var _response$blob = function(response) {
 	return _await(response.blob(), _URL$createObjectURL);
 };
 var fetchAsObjectURL = _async(function(url) {

@@ -69,44 +69,46 @@ export function _isSettledPact(thenable) {
 }
 
 // Converts argument to a function that always returns a Promise
-export const _async = (function() {
-	try {
-		if (isNaN.apply(null, {})) {
-			return function(f) {
-				return function() {
-					try {
-						return Promise.resolve(f.apply(this, arguments));
-					} catch(e) {
-						return Promise.reject(e);
-					}
-				}
-			};
+export function _async(fn, delay) {
+  return function() {
+		var args = Array.prototype.slice.call(arguments, 0);
+		var _this = this;
+
+		// make fn run in an async thread
+		if (delay) {
+			return new Promise(function(resolve, reject) {
+				Promise.resolve().then(function() {
+					return fn.apply(_this, args);
+				}).then(resolve).catch(reject);
+			});
 		}
-	} catch (e) {
-	}
-	return function(f) {
-		// Pre-ES5.1 JavaScript runtimes don't accept array-likes in Function.apply
-		return function() {
-			var args = [];
-			for (var i = 0; i < arguments.length; i++) {
-				args[i] = arguments[i];
-			}
-			try {
-				return Promise.resolve(f.apply(this, args));
-			} catch(e) {
-				return Promise.reject(e);
-			}
+
+		try {
+			return Promise.resolve(fn.apply(_this, args));
+		} 
+		catch(e) {
+			return Promise.reject(e);
 		}
-	};
-})();
+  };
+}
 
 // Awaits on a value that may or may not be a Promise (equivalent to the await keyword in ES2015, with continuations passed explicitly)
-export function _await(value, then, direct) {
+export function _await(input, then, direct) {
 	if (direct) {
-		return then ? then(value) : value;
+		return typeof then === 'function' ? then(input) : input;
 	}
-	value = Promise.resolve(value);
-	return then ? value.then(then) : value;
+
+  var defering = function(input) {
+    return Promise.resolve(input);
+	};
+  if (typeof then === 'function') {
+    return new Promise(function(resolve, reject) {
+      defering(input).then(_async(then)).then(resolve).catch(reject);
+    });
+  }
+  else {
+    return defering(input);
+  }
 }
 
 // Awaits on a value that may or may not be a Promise, then ignores it
